@@ -76,7 +76,6 @@ accounts.extendWeb3();
         - [`Accounts.remove(address)`](#method-remove) 
         - [`Accounts.clear()`](#method-clear) 
         - [`Accounts.contains(address)`](#method-clear) 
-        - [`Accounts.contains(address)`](#method-contains) 
         - [`Accounts.length()`](#method-length) 
         - [`Accounts.extendWeb3()`](#method-extendWeb3) 
 
