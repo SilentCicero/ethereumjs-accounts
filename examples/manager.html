@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Accounts Manager</title>
+        <meta name="description" content="The HTML5 Herald">
+        <meta name="author" content="SitePoint">
+
+        <!--[if lt IE 9]>
+            <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+    </head>
+    <body style="width: 75%; margin: 0px auto; padding-top: 200px;">
+        <!-- the welcome HTML -->
+        <h1>ethereumjs-accounts</h1>
+        <p>Welcome to the ethereumjs-accounts demo. Here you can generate, encrypt, store, and remove Ethereum accounts in browser.</p>
+        <br><br>
+        
+        <!-- account generator HTML -->
+        <h2>Generate Account</h2>
+        <p>Here you can generate an Ethereum account in browser, optionally you can encrypt the account private and public keys with a passphrase using AES encryption.</p>
+        <input type="text" placeholder="passphrase" id="new_passphrase"> 
+        <hr>
+        <button id="new">Generate Account</button>
+        <br>
+        <pre id="new_result"></pre>
+        
+        <br><br>
+        
+        <!-- get accounts HTML -->
+        <h2>Get Accounts</h2>
+        <p>Here you can get an Ethereum account from browser storage. If the account uses encryption, provide the passphrase below. You can get all accounts by leaving the address field blank.</p>
+        <input type="text" placeholder="address" id="get_address"> 
+        <input type="text" placeholder="passphrase" id="get_passphrase"> 
+        <hr>
+        <button id="get">Get Account</button>
+        <button id="selected">Get Selected</button>
+        <br>
+        <pre id="get_result"></pre>
+        
+        <br><br>
+        
+        <!-- clear accounts HTML -->
+        <h2>Clear Acocunts</h2>
+        <p>Here you can clear all Ethereum accounts stored in browser storage.</p>
+        <hr>
+        <button id="clear">Clear Accounts</button>
+        <br>
+        <pre id="clear_result"></pre>
+        
+        <br><br>
+        
+        <!-- backup accounts HTML -->
+        <h2>Backup Accounts</h2>
+        <p>Here you can save your current browser wallet in a zip file.</p>
+        <hr>
+        <button id="backup">Backup Wallet</button>
+        <br>
+        <pre id="backup_result"></pre>
+        
+        <br><br>
+        
+        <!-- some web3 HTML -->
+        <h2>Use with Web3</h2>
+        <p>Here you can use an account stored in browser to send a transaction with the web3.js object. This is an example use case where Accounts.extendWeb3 method is used to extend the web3.js object.</p>
+        <input type="text" placeholder="address" id="web3_address"> 
+        <input type="text" placeholder="value" id="web3_value">
+        <hr>
+        <button id="send">Send Transaction</button>
+        <br>
+        <pre id="web3_result"></pre>
+        
+        <br><br>
+        
+        <!-- ethereumjs-accounts JS -->
+        <script src="../dist/ethereumjs-accounts.js"></script>
+        <script src="web3.js"></script>
+        <script type="text/javascript">
+            // Make alias of docuemtn.getElementById -> $
+            function makeAlias(object, name) {
+                var fn = object ? object[name] : null;
+                if (typeof fn == 'undefined') return function () {}
+                return function () {
+                    return fn.apply(object, arguments)
+                }
+            }
+            
+            // Make docuemtn.getElementById aliased by $
+            $ = makeAlias(document, 'getElementById');
+            
+            // Set web3 provider
+            web3.setProvider(new web3.providers.HttpProvider("http://192.168.0.11:8545/"));
+            
+            // Create Accounts Object
+            var Accounts = new Accounts();
+            
+            // Extend the web3 object
+            Accounts.extendWeb3();
+            
+            // When the window DOM loads
+            window.onload = function () {
+                
+                // When 'Generate Account' is clicked
+                $("new").onclick = function() {
+                    console.log($("new_passphrase").value);
+                    
+                    var newAccount = Accounts.new($("new_passphrase").value);
+                    $("new_result").innerHTML = JSON.stringify(newAccount, null, 2);
+                };
+                
+                // When 'Get Accounts' is clicked
+                $("get").onclick = function() {
+                    $("get_result").innerHTML = JSON.stringify(
+                        Accounts.get(
+                        $("get_address").value
+                        , $("get_passphrase").value
+                    ), null, 2);
+                };
+                
+                // When 'Get Selected' is clicked
+                $("selected").onclick = function() {
+                    $("get_result").innerHTML = JSON.stringify(
+                        Accounts.get(
+                        'selected'
+                        , $("get_passphrase").value
+                    ), null, 2);
+                };
+
+                // When 'Clear' is clicked
+                $("clear").onclick = function() {
+                    Accounts.clear();
+                    $("clear_result").innerHTML = 'Accounts cleared!';
+                };
+
+                // When 'Clear' is clicked
+                $("backup").onclick = function() {
+                    Accounts.backup();
+                    $("backup_result").innerHTML = 'Backup created!';
+                };
+
+                // When 'Send Transaciton' is clicked
+                $("send").onclick = function() {
+                    $("web3_result").innerHTML = 'Processing transaction...';
+                    web3.eth.sendTransaction({
+                        from: $("web3_address").value
+                        , to: '0x57dc42e2ce99f8db2313f9225a879e61c5bf78c8'
+                        , value: web3.toWei($("web3_value").value, 'ether')
+                    }, function(err, result){
+                        var html = '';
+                        
+                        if(err)
+                            html = 'There was an error with the transaciton: ' + String(err);
+                        else
+                            html = 'The transaction went through succesfully, hash: ' + String(result);
+                        
+                        $("web3_result").innerHTML = html;
+                    });
+                };
+            };
+        </script>
+    </body>
+</html>

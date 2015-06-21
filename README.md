@@ -5,7 +5,7 @@ A simple module for creating, managing and using Ethereum accounts in browser.
 
 This module allows the secure generation and management of Ethereum accounts in browser and the functionality to optionally override the web3(.js) object (i.e. the 'sendTransaction' method) so that, when browser stored accounts are being used by dApps, their outgoing transactions can be securly signed by the accounts stored in browser. All account data is stored in the browsers localStore and can be optionally encrypted with a passphrase using AES. If your using Meteor.js, the Accounts object will be a reactive variable. 
 
-Please note that this module is still in Alpha and the 'extendWeb3' method is still being developed.
+Please note that this module is still in Alpha and the 'extendWeb3' method is still being developed and vetted. The security status of this module is still unknown and must still be vetted by trusted third-parties before production use.
 
 ## Installation
 
@@ -88,6 +88,15 @@ accounts.extendWeb3();
 * [ethereumjs-tx](https://github.com/ethereum/ethereumjs-tx) v0.2.3
 * [browserify-cryptojs](https://github.com/fahad19/crypto-js/) v0.3.1
 
+## Security
+
+This module uses the browser cyrptojs module to generate random alphanumeric characters. The security of this module as a safe source of random number generation is still not clear.
+
+This module uses standardized AES encryption to encrypt the private and public keys of accounts before they are stored in browser storage. A hash is made that concats the public and private keys together in order to verify account decryption.
+
+While localStore is known to be relatively secure, there is still a chance that browser extensions or third-party software could access the raw data. If a password is provided, this module will encrypt the private and public keys with AES before it is stored in the browsers local storage.
+
+As states previously, the security of this module is still unknown, and I do not in any way guarantee it to be completely secure for production use.
 
 ## Licence
 
