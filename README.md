@@ -5,6 +5,8 @@ A simple module for creating, managing and using Ethereum accounts in browser.
 
 This module allows the secure generation and management of Ethereum accounts in browser and the functionality to optionally override the web3(.js) object (i.e. the 'sendTransaction' method) so that, when browser stored accounts are being used by dApps, their outgoing transactions can be securly signed by the accounts stored in browser. All account data is stored in the browsers localStore and can be optionally encrypted with a passphrase using AES. If your using Meteor.js, the Accounts object will be a reactive variable. 
 
+Please note that this module is still in Alpha and the 'extendWeb3' method is still being developed.
+
 ## Installation
 
 ### Node.js
