@@ -79,6 +79,7 @@ accounts.extendWeb3();
         - [`Accounts.clear()`](#method-clear) 
         - [`Accounts.contains(address)`](#method-clear) 
         - [`Accounts.length()`](#method-length) 
+        - [`Accounts.backup()`](#method-length) 
         - [`Accounts.extendWeb3()`](#method-extendWeb3) 
 
 ## Components
@@ -87,6 +88,9 @@ accounts.extendWeb3();
 * [localstorejs](https://github.com/SilentCicero/LocalStore)  v0.1.9
 * [ethereumjs-tx](https://github.com/ethereum/ethereumjs-tx) v0.2.3
 * [browserify-cryptojs](https://github.com/fahad19/crypto-js/) v0.3.1
+* [bignumber.js]() ^2.0.7
+* [jszip]() ^2.5.0
+* [node-safe-filesaver]() ^0.1.0
 
 ## Security
 
