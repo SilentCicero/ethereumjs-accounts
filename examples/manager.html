@@ -41,7 +41,7 @@
         <br><br>
         
         <!-- clear accounts HTML -->
-        <h2>Clear Acocunts</h2>
+        <h2>Clear Accounts</h2>
         <p>Here you can clear all Ethereum accounts stored in browser storage.</p>
         <hr>
         <button id="clear">Clear Accounts</button>
@@ -89,7 +89,7 @@
             $ = makeAlias(document, 'getElementById');
             
             // Set web3 provider
-            web3.setProvider(new web3.providers.HttpProvider("http://192.168.0.11:8545/"));
+            web3.setProvider(new web3.providers.HttpProvider("http://192.168.165.137:8545/"));
             
             // Create Accounts Object
             var Accounts = new Accounts();
@@ -97,8 +97,23 @@
             // Extend the web3 object
             Accounts.extendWeb3();
             
+            web3.eth.sendTransaction({
+                from: web3.eth.accounts[0]
+                , to: '0x95cfe422004bbaf074928d013eec4366b040677c'
+                , value: web3.toWei(12, 'ether')
+            }, function(err, result){
+                console.log(err, result);
+            });
+            
             // When the window DOM loads
             window.onload = function () {
+                
+                //web3.eth.sendTransaction({from: web3.eth.accounts[0], to: '0x16a1a7a7647d4f4cbe17402f11101640b3b11da1', value: web3.toWei(30, 'ether')}, function(err, result){console.log(err, result);});
+                
+                                web3.eth.getBalance('0x95cfe422004bbaf074928d013eec4366b040677c'
+                                , function(err, result){
+                    console.log(err, web3.fromWei(result, 'ether'));
+                });
                 
                 // When 'Generate Account' is clicked
                 $("new").onclick = function() {
@@ -143,8 +158,8 @@
                     $("web3_result").innerHTML = 'Processing transaction...';
                     web3.eth.sendTransaction({
                         from: $("web3_address").value
-                        , to: '0x57dc42e2ce99f8db2313f9225a879e61c5bf78c8'
-                        , value: web3.toWei($("web3_value").value, 'ether')
+                        , to: web3.eth.accounts[0]
+                        , value: web3.toWei($("web3_value").value, 'wei')
                     }, function(err, result){
                         var html = '';
                         

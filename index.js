@@ -38,8 +38,6 @@ require('browserify-cryptojs/components/evpkdf');
 require('browserify-cryptojs/components/cipher-core');
 require('browserify-cryptojs/components/aes');
 
-//console.log(saveAs);
-
 /**
 The Accounts constructor method. This method will construct the in browser Ethereum accounts manager.
 
@@ -102,12 +100,12 @@ Prepair numbers for raw transactions.
 
 var formatNumber = function(num){
     if(_.isUndefined(num) || _.isEmpty(num))
-        num = 0;
+        num = '00';
     
     if(_.isString(num) || _.isNumber(num))
         num = new BigNumber(String(num)).toString(16);
     
-    if(_.isObject(num) && isBigNumber(num))
+    if(_.isObject(num) || isBigNumber(num))
         num = num.toString(16);
     
     return formatHex(num);
@@ -332,8 +330,6 @@ Accounts.prototype.get = function(address, passphrase){
     if(address == 'selected')
         address = accounts.selected;
     
-    console.log(accounts);
-    
     var accountObject = {};    
     address = formatAddress(address);
     
@@ -386,8 +382,6 @@ Does the account exist in browser storage, given the specified account address.
 **/
 
 Accounts.prototype.contains = function(address){
-    console.log(address);
-    
     var accounts = LocalStore.get(this.options.varName);
     
     if(_.isUndefined(address)
@@ -397,8 +391,6 @@ Accounts.prototype.contains = function(address){
     // Add '0x' prefix if not available
     address = formatAddress(address);
     
-    console.log(address);
-
     // If account with address exists.
     if(_.has(accounts, address))
         return (!_.isUndefined(accounts[address]) && !_.isEmpty(accounts[address]));
@@ -457,30 +449,32 @@ This method will override web3.eth.sendTransaction, and assemble transactions gi
 **/
 
 Accounts.prototype.extendWeb3 = function(){
+    // If web3 is not init. yet
     if(typeof web3 === "undefined") {
-        console.log('The web3 object does not exist or has not been initiated yet. Please include and initiate the web3 object');
+        console.log('WARNING: The web3 object does not exist or has not been initiated yet. Please include and initiate the web3 object');
         return;
     }
     
+    // If web3 does not have sendRawTransaction
     if(!_.has(web3.eth, 'sendRawTransaction')) {
-        console.log('The web3 object does not contain the sendRawTransaction method which is required to extend web3.eth.sendTransaction. Please use an edition of web3 that contains the method "web3.eth.sendRawTransaction".');        
+        console.log('WARNING: The web3 object does not contain the sendRawTransaction method which is required to extend web3.eth.sendTransaction. Please use an edition of web3 that contains the method "web3.eth.sendRawTransaction".');        
         return;
     }
     
+    // Store old instance of sendTransaction and sendRawTransaction
     var transactMethod = web3.eth.sendTransaction;
     var rawTransactionMethod = web3.eth.sendRawTransaction;
-    
-    // Get default gas price
-    if(this.options.defaultGasPrice == 'useWeb3') {
-        web3.eth.getGasPrice(function(err, result){
-            if(!err)
-                Accounts.gasPrice = result;
-        });
-    }
     
     // Accounts instance
     var accounts = this;
     
+    // Get default gas price
+    if(this.options.defaultGasPrice == 'useWeb3') {
+        web3.eth.getGasPrice(function(err, result){            
+            if(!err)
+                accounts.gasPrice = result;
+        });
+    }
     
     // Override web3.eth.sendTransaction
     web3.eth.sendTransaction = function(){
@@ -507,20 +501,18 @@ Accounts.prototype.extendWeb3 = function(){
             }
         });
         
-        console.log(optionsObject);
-        
         // if from is an account stored in browser, build raw TX and send
         if(accounts.contains(optionsObject.from)) {
             // Handle gasPrice
-            var gasPrice = this.gasPrice;
+            var gasPrice = accounts.gasPrice;
+
+            // if gasPrice is a string or number
+            if(_.isString(gasPrice) || _.isNumber(gasPrice))
+                gasPrice = new BigNumber(gasPrice).toString(16);
 
             // If gas is a BigNumber
             if(isBigNumber(gasPrice))
                 gasPrice = gasPrice.toString(16);
-
-            // if gasPrice is a string or number
-            if(_.isString(gasPrice) || _.isNumber(gasPrice))
-                gasPrice = new BN(gasPrice).toString(16);
             
             // Get the account of address set in sendTransaction options, from the accounts stored in browser
             var account = accounts.get(optionsObject.from);
@@ -541,7 +533,7 @@ Accounts.prototype.extendWeb3 = function(){
             // Assemble the default raw transaction data
             var rawTx = {
               nonce: formatHex(getNonce),
-              gasPrice: gasPrice,
+              gasPrice: formatNumber(gasPrice),
               gas: '1cfde0',
               value: '00', 
               data: '00'

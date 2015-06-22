@@ -1,4 +1,5 @@
 ## Synopsis
+
 A simple module for creating, managing and using Ethereum accounts in browser.
 
 ## About
@@ -78,8 +79,8 @@ accounts.extendWeb3();
         - [`Accounts.remove(address)`](#method-remove) 
         - [`Accounts.clear()`](#method-clear) 
         - [`Accounts.contains(address)`](#method-clear) 
-        - [`Accounts.length()`](#method-length) 
-        - [`Accounts.backup()`](#method-length) 
+        - [`Accounts.count()`](#method-count) 
+        - [`Accounts.backup()`](#method-backup) 
         - [`Accounts.extendWeb3()`](#method-extendWeb3) 
 
 ## Components
