@@ -107,7 +107,7 @@ var formatNumber = function(num){
     if(_.isString(num) || _.isNumber(num))
         num = new BigNumber(String(num)).toString(16);
     
-    if(_.isObject(num) || isBigNumber(num))
+    if(isBigNumber(num))
         num = num.toString(16);
     
     return formatHex(num);
@@ -256,15 +256,15 @@ Generate a new Ethereum account in browser with a passphrase that will encrypt t
 **/
 
 Accounts.prototype.new = function(passphrase){
-    var private = new Buffer(randomBytes(64), 'hex').toString('hex');
-    var public = ethUtil.privateToPublic(private).toString('hex');
-    var address = formatAddress(ethUtil.privateToAddress(public)
+    var private = new Buffer(randomBytes(64), 'hex');
+    var public = ethUtil.privateToPublic(private);
+    var address = formatAddress(ethUtil.publicToAddress(public)
                                 .toString('hex'));
     var accountObject = {
         address: address
         , encrypted: false
         , locked: false
-        , hash: ethUtil.sha3(public + private).toString('hex')
+        , hash: ethUtil.sha3(public.toString('hex') + private.toString('hex')).toString('hex')
     };
     
     // if passphrrase provided or required, attempt account encryption
@@ -272,16 +272,19 @@ Accounts.prototype.new = function(passphrase){
         || this.options.requirePassphrase){
         if(this.isPassphrase(passphrase)) {
             private = CryptoJS.AES
-                .encrypt(private, passphrase)
+                .encrypt(private.toString('hex'), passphrase)
                 .toString();
             public = CryptoJS.AES
-                .encrypt(public, passphrase)
+                .encrypt(public.toString('hex'), passphrase)
                 .toString();
             accountObject.encrypted = true;
             accountObject.locked = true;
         } else {
             console.log('The passphrase you tried to use was invalid.');
         }
+    }else{
+        private = private.toString('hex')
+        public = public.toString('hex')
     }
     
     // Set account object private and public keys
@@ -504,63 +507,52 @@ Accounts.prototype.extendWeb3 = function(){
         });
         
         // if from is an account stored in browser, build raw TX and send
-        if(accounts.contains(optionsObject.from)) {
-            // Handle gasPrice
-            var gasPrice = accounts.gasPrice;
-
-            // if gasPrice is a string or number
-            if(_.isString(gasPrice) || _.isNumber(gasPrice))
-                gasPrice = new BigNumber(gasPrice).toString(16);
-
-            // If gas is a BigNumber
-            if(isBigNumber(gasPrice))
-                gasPrice = gasPrice.toString(16);
-            
+        if(accounts.contains(optionsObject.from)) {            
             // Get the account of address set in sendTransaction options, from the accounts stored in browser
             var account = accounts.get(optionsObject.from);
             
             // if the account is encrypted, try to decrypt it
             if(account.encrypted) {
-                var passphrase = accounts.options.request(account);
-                account = accounts.get(optionsObject.from, passphrase);
+                account = accounts.get(optionsObject.from
+                                       ,accounts.options.request(account));
             }
             
-            console.log(account);
-            
             // if account is still locked, quit
-            if(account.locked)
+            if(account.locked) {
+                console.log('Account locked!');
                 return;
+            }
             
             // Get account nonce for raw transaction data
             var getNonce = web3.eth.getTransactionCount(account.address);
     
             // Assemble the default raw transaction data
             var rawTx = {
-              nonce: formatHex(getNonce),
-              gasPrice: formatNumber(gasPrice),
-              gas: '1cfde0',
-              value: '00', 
-              data: '00'
+                nonce: formatHex(getNonce),
+                gasPrice: formatHex(web3.eth.gasPrice.toString(16)),
+                gasLimit: formatHex(new BigNumber('1900000').toString(16)),
+                value: '00',
+                data: '00'
             };
             
             // Set whatever properties are available from the sendTransaction options object
             if(_.has(optionsObject, 'gasPrice'))
-                rawTx.gasPrice = formatNumber(optionsObject.gasPrice);
+                rawTx.gasPrice = formatHex(formatNumber(optionsObject.gasPrice));
             
             if(_.has(optionsObject, 'gas'))
-                rawTx.gas = formatNumber(optionsObject.gas);
+                rawTx.gasLimit = formatHex(formatNumber(optionsObject.gas));
             
             if(_.has(optionsObject, 'to'))
-                rawTx.to = formatAddress(optionsObject.to, 'raw');
+                rawTx.to = ethUtil.stripHexPrefix(optionsObject.to);
             
             if(_.has(optionsObject, 'value'))
                 rawTx.value = formatNumber(optionsObject.value);
             
             if(_.has(optionsObject, 'data'))
-                rawTx.data = formatHex(optionsObject.data);
+                rawTx.data = ethUtil.stripHexPrefix(formatHex(optionsObject.data));
             
             if(_.has(optionsObject, 'code'))
-                rawTx.data = formatHex(optionsObject.code);
+                rawTx.data = ethUtil.stripHexPrefix(formatHex(optionsObject.code));
             
             // convert string private key to a Buffer Object
             var privateKey = new Buffer(account.private, 'hex');
@@ -572,7 +564,7 @@ Accounts.prototype.extendWeb3 = function(){
             // Build a serialized hex version of the Tx
             var serializedTx = '0x' + tx.serialize().toString('hex');
             
-            console.log('Raw Tx', rawTx, 'Options Object', optionsObject, 'Account', account, 'Nonce', getNonce, 'Serialized', serializedTx);
+            //console.log('Raw Tx', rawTx, 'Options Object', optionsObject, 'Account', account, 'Nonce', getNonce, 'Serialized', serializedTx);
             
             // call the web3.eth.sendRawTransaction with 
             rawTransactionMethod(serializedTx, callback);   
@@ -582,24 +574,6 @@ Accounts.prototype.extendWeb3 = function(){
         }
     };
 };
-
-var privateKey = new Buffer('f990884d5bbe312660fbb1498483fc906f049afacc1ed9ed4f8dae899d3dbb33', 'hex');
-
-var rawTx = {
-  nonce: '00',
-  gasPrice: '09184e72a000', 
-  gasLimit: '2710',
-  to: '9fa3f9c2bd13b8db28efeccd50b8b83bc1a9a0ec', 
-  value: '2710', 
-  data: '00'
-};
-
-var tx = new Tx(rawTx);
-tx.sign(privateKey);
-
-var serializedTx = tx.serialize();
-
-console.log(serializedTx);
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 },{"bignumber.js":2,"browserify-cryptojs":8,"browserify-cryptojs/components/aes":3,"browserify-cryptojs/components/cipher-core":4,"browserify-cryptojs/components/enc-base64":5,"browserify-cryptojs/components/evpkdf":6,"browserify-cryptojs/components/md5":7,"buffer":88,"ethereumjs-tx":10,"jszip":52,"localstorejs":83,"node-safe-filesaver":84,"underscore":85}],2:[function(require,module,exports){
 /*! bignumber.js v2.0.7 https://github.com/MikeMcl/bignumber.js/LICENCE */

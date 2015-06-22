@@ -62,9 +62,9 @@
         
         <!-- some web3 HTML -->
         <h2>Use with Web3</h2>
-        <p>Here you can use an account stored in browser to send a transaction with the web3.js object. This is an example use case where Accounts.extendWeb3 method is used to extend the web3.js object.</p>
+        <p>Here you can use an account stored in browser to send a transaction with the web3.js object. This is an example use case where Accounts.extendWeb3 method is used to extend the web3.js object. Make sure you send Ether to the account you want to use. The value below will be converted to ether.</p>
         <input type="text" placeholder="address" id="web3_address"> 
-        <input type="text" placeholder="value" id="web3_value">
+        <input type="text" placeholder="value (e.g. 1 [ether])" id="web3_value">
         <hr>
         <button id="send">Send Transaction</button>
         <br>
@@ -89,7 +89,7 @@
             $ = makeAlias(document, 'getElementById');
             
             // Set web3 provider
-            web3.setProvider(new web3.providers.HttpProvider("http://192.168.165.137:8545/"));
+            web3.setProvider(new web3.providers.HttpProvider("http://192.168.0.11:8545/"));
             
             // Create Accounts Object
             var Accounts = new Accounts();
@@ -97,23 +97,10 @@
             // Extend the web3 object
             Accounts.extendWeb3();
             
-            web3.eth.sendTransaction({
-                from: web3.eth.accounts[0]
-                , to: '0x95cfe422004bbaf074928d013eec4366b040677c'
-                , value: web3.toWei(12, 'ether')
-            }, function(err, result){
-                console.log(err, result);
-            });
-            
             // When the window DOM loads
             window.onload = function () {
-                
-                //web3.eth.sendTransaction({from: web3.eth.accounts[0], to: '0x16a1a7a7647d4f4cbe17402f11101640b3b11da1', value: web3.toWei(30, 'ether')}, function(err, result){console.log(err, result);});
-                
-                                web3.eth.getBalance('0x95cfe422004bbaf074928d013eec4366b040677c'
-                                , function(err, result){
-                    console.log(err, web3.fromWei(result, 'ether'));
-                });
+                // Send ether to the account you want to use (for testing)
+                //web3.eth.sendTransaction({from: web3.eth.accounts[0], to: '0x6f801e7bfea263fa60a1ed1afcffd124f749ee79', value: web3.toWei(30, 'ether')}, function(err, result){console.log(err, result);});
                 
                 // When 'Generate Account' is clicked
                 $("new").onclick = function() {
@@ -155,11 +142,19 @@
 
                 // When 'Send Transaciton' is clicked
                 $("send").onclick = function() {
-                    $("web3_result").innerHTML = 'Processing transaction...';
+                    $("web3_result").innerHTML = 'Processing transaction...';                           
+                    
+                    web3.eth.getBalance(             
+                        '0x16269a6af79fe24b595e458586ba1f54c24d3c80'
+                    , function(err, result){
+                        if(!err)
+                            $("web3_result").innerHTML = 'Account has a balance of ' + String(web3.fromWei(result, 'ether')) + ' ether...';
+                    });
+                    
                     web3.eth.sendTransaction({
                         from: $("web3_address").value
                         , to: web3.eth.accounts[0]
-                        , value: web3.toWei($("web3_value").value, 'wei')
+                        , value: web3.toWei($("web3_value").value, 'ether')
                     }, function(err, result){
                         var html = '';
                         
