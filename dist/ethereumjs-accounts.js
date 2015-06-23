@@ -53,6 +53,7 @@ var Accounts = module.exports = function(options){
     if(_.isUndefined(options))
         options = {};
     
+    // setup default options
     var defaultOptions = {
         varName: 'ethereumAccounts'
         , minPassphraseLength: 6
@@ -68,7 +69,12 @@ var Accounts = module.exports = function(options){
             return String(passphrase);
         }
     };
+    
+    // build options
     this.options = _.extend(defaultOptions, options);
+    
+    // define Accounts object properties
+    defineProperties(this);
     
     // get accounts object, if any
     var accounts = LocalStore.get(this.options.varName);
@@ -111,6 +117,33 @@ var formatNumber = function(num){
         num = num.toString(16);
     
     return formatHex(num);
+};
+
+
+/**
+Prepair Ethereum address for either raw transactions or browser storage.
+
+@method (formatAddress)
+@param {String} addr    An ethereum address to prep
+@param {String} format          The format type (i.e. 'raw' or 'hex')
+@return {String} The prepaired ethereum address
+**/
+
+var formatAddress = function(addr, format){
+    if(_.isUndefined(format) || !_.isString(format))
+        format = 'hex';
+    
+    if(_.isUndefined(addr)
+       || !_.isString(addr))
+        addr = '0000000000000000000000000000000000000000';
+    
+    if(addr.substr(0, 2) == '0x' && format == 'raw')
+        addr = addr.substr(2);
+    
+    if(addr.substr(0, 2) != '0x' && format == 'hex')
+        addr = '0x' + addr;
+    
+    return addr;
 };
 
 
@@ -171,29 +204,34 @@ var isAddress = function (address) {
 
 
 /**
-Prepair Ethereum address for either raw transactions or browser storage.
+Define object properties such as 'length'.
 
-@method (formatAddress)
-@param {String} addr    An ethereum address to prep
-@param {String} format          The format type (i.e. 'raw' or 'hex')
-@return {String} The prepaired ethereum address
+@method (defineProperties)
+@param {Object} context     The Accounts object context
 **/
 
-var formatAddress = function(addr, format){
-    if(_.isUndefined(format) || !_.isString(format))
-        format = 'hex';
-    
-    if(_.isUndefined(addr)
-       || !_.isString(addr))
-        addr = '0000000000000000000000000000000000000000';
-    
-    if(addr.substr(0, 2) == '0x' && format == 'raw')
-        addr = addr.substr(2);
-    
-    if(addr.substr(0, 2) != '0x' && format == 'hex')
-        addr = '0x' + addr;
-    
-    return addr;
+var defineProperties = function(context){
+    Object.defineProperty(context, 'length', {
+        get: function() {
+            var count = 0;
+
+            // count valid accounts in browser storage
+            _.each(this.get(), function(account, accountIndex){  
+                if(_.isUndefined(account)
+                  || !_.isObject(account)
+                  || _.isString(account))
+                    return;
+
+                if(!_.has(account, 'encrypted')
+                   || !_.has(account, 'private'))
+                    return;
+
+                count += 1;
+            });
+
+            return count;
+        }
+    });
 };
 
 
@@ -405,27 +443,41 @@ Accounts.prototype.contains = function(address){
 
 
 /**
-The amount of accounts in local browser storage.
+Export the accounts to a JSON ready string.
 
-@method (count)
-@return {Number} The number of valid accounts in browser storage.
+@method (export)
+@return {String} A JSON ready string
 **/
 
-Accounts.prototype.count = function(){
+Accounts.prototype.export = function(){
+    return JSON.stringify(this.get());
+};
+
+
+/**
+Import a JSON ready string. This will import JSON data, parse it, and attempt to use it as accounts data.
+
+@method (import)
+@param {String} A JSON ready string
+@return {String} How many accountObject's were added
+**/
+
+Accounts.prototype.import = function(JSON_data){
+    var JSON_data = JSON_data.trim();
+    var parsed = JSON.parse(JSON_data);
     var count = 0;
+    var _this = this;
     
-    // count valid accounts in browser storage
-    _.each(this.get(), function(account, accountIndex){        
-        if(!_.isUndefined(account)
-          || !_.isObject(account)
-          || _.isString(account))
-            return;
-        
-        if(!_.has(account, 'encrypted')
-           || !_.has(account, 'private'))
+    _.each(parsed, function(accountObject, accountIndex){
+        if(!_.has(accountObject, 'private')
+           || !_.has(accountObject, 'hash')
+           || !_.has(accountObject, 'address')
+           || !_.has(accountObject, 'encrypted')
+           || !_.has(accountObject, 'locked'))
             return;
         
         count += 1;
+        _this.set(accountObject.address, accountObject);
     });
     
     return count;
@@ -440,7 +492,7 @@ Backup your accounts in a zip file.
 
 Accounts.prototype.backup = function(){
     var zip = new JSZip();
-    zip.file("wallet", JSON.stringify(this.get(), null, 2));
+    zip.file("wallet", this.export());
     var content = zip.generate({type:"blob"});
     var dateString = new Date();
     FileSaver.saveAs(content, "wallet-" + dateString.toISOString() + ".zip");

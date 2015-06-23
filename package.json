@@ -1,6 +1,6 @@
 {
   "name": "ethereumjs-accounts",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "A simple module for creating and managing ethereum accounts in browser.",
   "main": "index.js",
   "scripts": {

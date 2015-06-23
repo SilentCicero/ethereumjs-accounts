@@ -60,6 +60,18 @@
         
         <br><br>
         
+        <!-- backup accounts HTML -->
+        <h2>Import/Export Accounts</h2>
+        <p>Here you can export your accounts as a JSON ready string object, or import a JSON ready string object that contains account objects. Importing accounts will override existing stored accounts with the same addresses.</p>
+        <textarea id="importInput" onClick="this.setSelectionRange(0, this.value.length)" ></textarea>
+        <hr>
+        <button id="import">Import Accounts</button>
+        <button id="export">Export Accounts</button>
+        <br>
+        <pre id="import_result"></pre>
+        
+        <br><br>
+        
         <!-- some web3 HTML -->
         <h2>Use with Web3</h2>
         <p>Here you can use an account stored in browser to send a transaction with the web3.js object. This is an example use case where Accounts.extendWeb3 method is used to extend the web3.js object. Make sure you send Ether to the account you want to use. The value below will be converted to ether.</p>
@@ -96,6 +108,8 @@
             
             // Extend the web3 object
             Accounts.extendWeb3();
+            
+            console.log(Accounts.length);
             
             // When the window DOM loads
             window.onload = function () {
@@ -138,6 +152,18 @@
                 $("backup").onclick = function() {
                     Accounts.backup();
                     $("backup_result").innerHTML = 'Backup created!';
+                };
+
+                // When 'Import Accounts' is clicked
+                $("import").onclick = function() {
+                    Accounts.import($('importInput').value);
+                    $("import_result").innerHTML = 'Imported accounts.';
+                };
+
+                // When 'Clear' is clicked
+                $("export").onclick = function() {
+                    $('importInput').value = Accounts.export();
+                    $("import_result").innerHTML = 'Exported accounts!';
                 };
 
                 // When 'Send Transaciton' is clicked

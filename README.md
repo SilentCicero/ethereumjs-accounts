@@ -19,7 +19,7 @@ $ npm install ethereumjs-accounts
 ### Meteor.js
 
 ```
-$ coming soon...
+$ meteor add silentcicero:ethereumjs-accounts
 ```
 
 ## Usage
@@ -71,6 +71,7 @@ accounts.extendWeb3();
 - [`Accounts`](#accounts)
     - [`new Accounts([options])`](#new-accounts)
     - [`Accounts` Properties](#accounts-properties)
+        - [`Accounts.length`](#property-length) 
     - [`Accounts` Methods](#accounts-methods)
         - [`Accounts.new(passphrase)`](#method-new) 
         - [`Accounts.get(address[, passphrase])`](#method-get) 
@@ -79,9 +80,18 @@ accounts.extendWeb3();
         - [`Accounts.remove(address)`](#method-remove) 
         - [`Accounts.clear()`](#method-clear) 
         - [`Accounts.contains(address)`](#method-clear) 
-        - [`Accounts.count()`](#method-count) 
+        - [`Accounts.import()`](#method-import) 
+        - [`Accounts.export()`](#method-export) 
         - [`Accounts.backup()`](#method-backup) 
         - [`Accounts.extendWeb3()`](#method-extendWeb3) 
+        
+## Browserify
+
+You may browserify ethereumjs-accounts, by installing the npm modules `npm install` and then running the browserify CMD below. Please refer to the examples to see how a standalone browserified version is setup and used.
+
+```
+$ browserify --s Accounts index.js -o dist/ethereumjs-accounts.js
+```
 
 ## Components
 
@@ -89,9 +99,9 @@ accounts.extendWeb3();
 * [localstorejs](https://github.com/SilentCicero/LocalStore)  v0.1.9
 * [ethereumjs-tx](https://github.com/ethereum/ethereumjs-tx) v0.2.3
 * [browserify-cryptojs](https://github.com/fahad19/crypto-js/) v0.3.1
-* [bignumber.js]() ^2.0.7
-* [jszip]() ^2.5.0
-* [node-safe-filesaver]() ^0.1.0
+* [bignumber.js](https://github.com/MikeMcl/bignumber.js/) ^2.0.7
+* [jszip](https://stuk.github.io/jszip/) ^2.5.0
+* [node-safe-filesaver](https://github.com/domderen/FileSaver.js) ^0.1.0
 
 ## Security
 
@@ -101,7 +111,7 @@ This module uses standardized AES encryption to encrypt the private and public k
 
 While localStore is known to be relatively secure, there is still a chance that browser extensions or third-party software could access the raw data. If a password is provided, this module will encrypt the private and public keys with AES before it is stored in the browsers local storage.
 
-As states previously, the security of this module is still unknown, and I do not in any way guarantee it to be completely secure for production use.
+As stated previously, the security of this module is still unknown, and I do not in any way guarantee it to be secure or ready for production use.
 
 ## Licence
 
