@@ -535,7 +535,7 @@ Accounts.prototype.extendWeb3 = function(){
     web3.eth.sendTransaction = function(){
         var args = Array.prototype.slice.call(arguments);
         var optionsObject = {};
-        var callback = function(e, r){};
+        var callback = null;
         var positions = {};
         
         // Go through sendTransaction args (param1, param2, options, etc..)
@@ -555,6 +555,10 @@ Accounts.prototype.extendWeb3 = function(){
                 positions.callback = argIndex;
             }
         });
+
+        if (callback == null) {
+            throw new Error("You must provide a callback to web3.eth.sendTransaction() when using ethereumjs-accounts")
+        }
         
         // if from is an account stored in browser, build raw TX and send
         if(accounts.contains(optionsObject.from)) {            
@@ -573,54 +577,65 @@ Accounts.prototype.extendWeb3 = function(){
                 return;
             }
             
-            // Get account nonce for raw transaction data
-            var getNonce = web3.eth.getTransactionCount(account.address);
-    
-            // Assemble the default raw transaction data
-            var rawTx = {
-                nonce: formatHex(getNonce),
-                gasPrice: formatHex(web3.eth.gasPrice.toString(16)),
-                gasLimit: formatHex(new BigNumber('1900000').toString(16)),
-                value: '00',
-                data: '00'
-            };
-            
-            // Set whatever properties are available from the sendTransaction options object
-            if(_.has(optionsObject, 'gasPrice'))
-                rawTx.gasPrice = formatHex(formatNumber(optionsObject.gasPrice));
-            
-            if(_.has(optionsObject, 'gas'))
-                rawTx.gasLimit = formatHex(formatNumber(optionsObject.gas));
-            
-            if(_.has(optionsObject, 'to'))
-                rawTx.to = ethUtil.stripHexPrefix(optionsObject.to);
-            
-            if(_.has(optionsObject, 'value'))
-                rawTx.value = formatNumber(optionsObject.value);
-            
-            if(_.has(optionsObject, 'data'))
-                rawTx.data = ethUtil.stripHexPrefix(formatHex(optionsObject.data));
-            
-            if(_.has(optionsObject, 'code'))
-                rawTx.data = ethUtil.stripHexPrefix(formatHex(optionsObject.code));
-            
-            // convert string private key to a Buffer Object
-            var privateKey = new Buffer(account.private, 'hex');
-            
-            // init new transaction object, and sign the transaction
-            var tx = new Tx(rawTx);
-            tx.sign(privateKey);
-            
-            // Build a serialized hex version of the Tx
-            var serializedTx = '0x' + tx.serialize().toString('hex');
-            
-            //console.log('Raw Tx', rawTx, 'Options Object', optionsObject, 'Account', account, 'Nonce', getNonce, 'Serialized', serializedTx);
-            
-            // call the web3.eth.sendRawTransaction with 
-            rawTransactionMethod(serializedTx, callback);   
+            web3.eth.getTransactionCount(account.address, function(err, getNonce) {
+                if (err != null) {
+                    callback(err);
+                    return;
+                }
+
+                web3.eth.getGasPrice(function(err, gasPrice) {
+                    if (err != null) {
+                        callback(err);
+                        return;
+                    }
+
+                    // Assemble the default raw transaction data
+                    var rawTx = {
+                        nonce: formatHex(getNonce),
+                        gasPrice: formatHex(gasPrice.toString(16)),
+                        gasLimit: formatHex(new BigNumber('1900000').toString(16)),
+                        value: '00',
+                        data: '00'
+                    };
+
+                    // Set whatever properties are available from the sendTransaction options object
+                    if(_.has(optionsObject, 'gasPrice'))
+                        rawTx.gasPrice = formatHex(formatNumber(optionsObject.gasPrice));
+                    
+                    if(_.has(optionsObject, 'gas'))
+                        rawTx.gasLimit = formatHex(formatNumber(optionsObject.gas));
+                    
+                    if(_.has(optionsObject, 'to'))
+                        rawTx.to = ethUtil.stripHexPrefix(optionsObject.to);
+                    
+                    if(_.has(optionsObject, 'value'))
+                        rawTx.value = formatNumber(optionsObject.value);
+                    
+                    if(_.has(optionsObject, 'data'))
+                        rawTx.data = ethUtil.stripHexPrefix(formatHex(optionsObject.data));
+                    
+                    if(_.has(optionsObject, 'code'))
+                        rawTx.data = ethUtil.stripHexPrefix(formatHex(optionsObject.code));
+                    
+                    // convert string private key to a Buffer Object
+                    var privateKey = new Buffer(account.private, 'hex');
+                    
+                    // init new transaction object, and sign the transaction
+                    var tx = new Tx(rawTx);
+                    tx.sign(privateKey);
+                    
+                    // Build a serialized hex version of the Tx
+                    var serializedTx = '0x' + tx.serialize().toString('hex');
+                    
+                    //console.log('Raw Tx', rawTx, 'Options Object', optionsObject, 'Account', account, 'Nonce', getNonce, 'Serialized', serializedTx);
+                    
+                    // call the web3.eth.sendRawTransaction with 
+                    rawTransactionMethod(serializedTx, callback);   
+                });
+            });
         }else{
             // If the transaction is not using an account stored in browser, send as usual with web3.eth.sendTransaction
-            return transactMethod.apply(this, args);
+            transactMethod.apply(this, args);
         }
     };
 };
