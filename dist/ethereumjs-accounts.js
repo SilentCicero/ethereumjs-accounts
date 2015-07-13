@@ -636,7 +636,6 @@ Accounts.prototype.extendWeb3 = function(){
                 });
             });
         }else{
-            console.log("Using regular method.");
             // If the transaction is not using an account stored in browser, send as usual with web3.eth.sendTransaction
             transactMethod.apply(this, args);
         }
