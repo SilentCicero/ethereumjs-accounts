@@ -77,6 +77,7 @@ accounts.extendWeb3();
         - [`Accounts.get(address[, passphrase])`](#method-get) 
         - [`Accounts.set(address, accountObject)`](#method-set) 
         - [`Accounts.isPassphrase(passphrase)`](#method-isPassphrase) 
+        - [`Accounts.list()`](#method-list) 
         - [`Accounts.remove(address)`](#method-remove) 
         - [`Accounts.clear()`](#method-clear) 
         - [`Accounts.contains(address)`](#method-clear) 

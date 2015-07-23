@@ -498,6 +498,26 @@ Accounts.prototype.backup = function(){
 
 
 /**
+Return all accounts as a list array.
+
+@method (list)
+@return {Array} a list array of all accounts
+**/
+
+Accounts.prototype.list = function(){
+    var accounts = LocalStore.get('ethereumAccounts'),
+        return_array = [];
+    
+    _.each(_.keys(accounts), function(accountKey, accountIndex){
+       if(accountKey != "selected")
+           return_array.push(accounts[accountKey]);
+    });
+        
+    return return_array;
+};
+
+
+/**
 This method will override web3.eth.sendTransaction, and assemble transactions given the data provided, only for transactions sent from an account stored in browser. If sendTransaction is used with a normal account not stored in browser, sendTransaction will not be overridden.
 
 @method (extendWeb3)
