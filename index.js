@@ -105,11 +105,11 @@ Prepair numbers for raw transactions.
 **/
 
 var formatNumber = function(num){
-    if(_.isUndefined(num) || _.isEmpty(num))
+    if(_.isUndefined(num) || num == 0)
         num = '00';
     
     if(_.isString(num) || _.isNumber(num))
-        num = new BigNumber(String(num)).toString(16);
+        num = new BigNumber(String(num));
     
     if(isBigNumber(num))
         num = num.toString(16);
@@ -267,6 +267,8 @@ Accounts.prototype.set = function(address, accountObject){
     else
         delete accounts[formatAddress(address)];
     
+    this.log('Setting account object at address: ' + address + ' to account object ' + String(accountObject));
+    
     LocalStore.set(this.options.varName, accounts);
 };
 
@@ -316,7 +318,9 @@ Accounts.prototype.new = function(passphrase){
             accountObject.encrypted = true;
             accountObject.locked = true;
         } else {
-            console.log('The passphrase you tried to use was invalid.');
+            this.log('The passphrase you tried to use was invalid.');
+            private = private.toString('hex')
+            public = public.toString('hex')
         }
     }else{
         private = private.toString('hex')
@@ -327,6 +331,8 @@ Accounts.prototype.new = function(passphrase){
     accountObject.private = private;
     accountObject.public = public;
     this.set(address, accountObject);
+    
+    this.log('New address created');
     
     // If option select new is true
     if(this.options.selectNew)
@@ -395,7 +401,7 @@ Accounts.prototype.get = function(address, passphrase){
             if(ethUtil.sha3(accountObject.public + accountObject.private).toString('hex') == accountObject.hash)
                 accountObject.locked = false;
         }catch(e){
-            console.log('Error while decrypting public/private keys: ', e);
+            this.log('Error while decrypting public/private keys: ' + String(e));
         }
     }
     
@@ -410,6 +416,7 @@ Clear all stored Ethereum accounts in browser.
 **/
 
 Accounts.prototype.clear = function(){
+    this.log('Clearing all accounts');
     LocalStore.set(this.options.varName, {});
 };
 
@@ -448,6 +455,8 @@ Export the accounts to a JSON ready string.
 **/
 
 Accounts.prototype.export = function(){
+    this.log('Exported accounts');
+    
     return JSON.stringify(this.get());
 };
 
@@ -478,6 +487,8 @@ Accounts.prototype.import = function(JSON_data){
         _this.set(accountObject.address, accountObject);
     });
     
+    this.log('Imported ' + String(count) + ' accounts');
+    
     return count;
 };
 
@@ -493,8 +504,18 @@ Accounts.prototype.backup = function(){
     zip.file("wallet", this.export());
     var content = zip.generate({type:"blob"});
     var dateString = new Date();
+    this.log('Saving wallet as: ' + "wallet-" + dateString.toISOString() + ".zip");
     FileSaver.saveAs(content, "wallet-" + dateString.toISOString() + ".zip");
 };
+
+
+/**
+A log function that will log all actions that occur with ethereumjs-accounts.
+
+@method (log)
+**/
+
+Accounts.prototype.log = function(){};
 
 
 /**
@@ -526,13 +547,13 @@ This method will override web3.eth.sendTransaction, and assemble transactions gi
 Accounts.prototype.extendWeb3 = function(){
     // If web3 is not init. yet
     if(typeof web3 === "undefined") {
-        console.log('WARNING: The web3 object does not exist or has not been initiated yet. Please include and initiate the web3 object');
+        this.log('WARNING: The web3 object does not exist or has not been initiated yet. Please include and initiate the web3 object');
         return;
     }
     
     // If web3 does not have sendRawTransaction
     if(!_.has(web3.eth, 'sendRawTransaction')) {
-        console.log('WARNING: The web3 object does not contain the sendRawTransaction method which is required to extend web3.eth.sendTransaction. Please use an edition of web3 that contains the method "web3.eth.sendRawTransaction".');        
+        this.log('WARNING: The web3 object does not contain the sendRawTransaction method which is required to extend web3.eth.sendTransaction. Please use an edition of web3 that contains the method "web3.eth.sendRawTransaction".');        
         return;
     }
     
@@ -581,7 +602,7 @@ Accounts.prototype.extendWeb3 = function(){
         }
         
         // if from is an account stored in browser, build raw TX and send
-        if(accounts.contains(optionsObject.from)) {            
+        if(accounts.contains(optionsObject.from)) {   
             // Get the account of address set in sendTransaction options, from the accounts stored in browser
             var account = accounts.get(optionsObject.from);
             
@@ -593,7 +614,7 @@ Accounts.prototype.extendWeb3 = function(){
             
             // if account is still locked, quit
             if(account.locked) {
-                console.log('Account locked!');
+                accounts.log('Account locked!');
                 return;
             }
             
@@ -622,6 +643,9 @@ Accounts.prototype.extendWeb3 = function(){
                     if(_.has(optionsObject, 'gasPrice'))
                         rawTx.gasPrice = formatHex(formatNumber(optionsObject.gasPrice));
                     
+                    if(_.has(optionsObject, 'gasLimit'))
+                        rawTx.gasLimit = formatHex(formatNumber(optionsObject.gasLimit));
+                    
                     if(_.has(optionsObject, 'gas'))
                         rawTx.gasLimit = formatHex(formatNumber(optionsObject.gas));
                     
@@ -646,8 +670,6 @@ Accounts.prototype.extendWeb3 = function(){
                     
                     // Build a serialized hex version of the Tx
                     var serializedTx = '0x' + tx.serialize().toString('hex');
-                    
-                    //console.log('Raw Tx', rawTx, 'Options Object', optionsObject, 'Account', account, 'Nonce', getNonce, 'Serialized', serializedTx);
                     
                     // call the web3.eth.sendRawTransaction with 
                     rawTransactionMethod(serializedTx, callback);   
