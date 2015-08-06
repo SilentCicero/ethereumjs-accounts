@@ -22,7 +22,7 @@ Commands:
     npm install ethereumjs-accounts
 
     (Meteor)
-    meteor install silentcicero:ethereumjs-accounts    
+    meteor install silentcicero:ethereumjs-accounts
 **/
 
 var _ = require('underscore');
@@ -50,7 +50,7 @@ The Accounts constructor method. This method will construct the in browser Ether
 var Accounts = module.exports = function(options){
     if(_.isUndefined(options))
         options = {};
-    
+
     // setup default options
     var defaultOptions = {
         varName: 'ethereumAccounts'
@@ -60,23 +60,23 @@ var Accounts = module.exports = function(options){
         , defaultGasPrice: 'useWeb3'
         , request: function(accountObject){
             var passphrase = prompt("Please enter your account passphrase for address " + accountObject.address.substr(0, 8) + '...', "passphrase");
-            
+
             if(passphrase == null)
                 passphrase = '';
-            
+
             return String(passphrase);
         }
     };
-    
+
     // build options
     this.options = _.extend(defaultOptions, options);
-    
+
     // define Accounts object properties
     defineProperties(this);
-    
+
     // get accounts object, if any
     var accounts = LocalStore.get(this.options.varName);
-    
+
     // if no accounts object exists, create one
     if(_.isUndefined(accounts) || !_.isObject(accounts))
         LocalStore.set(this.options.varName, {});
@@ -107,13 +107,13 @@ Prepair numbers for raw transactions.
 var formatNumber = function(num){
     if(_.isUndefined(num) || num == 0)
         num = '00';
-    
+
     if(_.isString(num) || _.isNumber(num))
         num = new BigNumber(String(num));
-    
+
     if(isBigNumber(num))
         num = num.toString(16);
-    
+
     return formatHex(num);
 };
 
@@ -130,17 +130,17 @@ Prepair Ethereum address for either raw transactions or browser storage.
 var formatAddress = function(addr, format){
     if(_.isUndefined(format) || !_.isString(format))
         format = 'hex';
-    
+
     if(_.isUndefined(addr)
        || !_.isString(addr))
         addr = '0000000000000000000000000000000000000000';
-    
+
     if(addr.substr(0, 2) == '0x' && format == 'raw')
         addr = addr.substr(2);
-    
+
     if(addr.substr(0, 2) != '0x' && format == 'hex')
         addr = '0x' + addr;
-    
+
     return addr;
 };
 
@@ -184,7 +184,7 @@ Is the object provided a Bignumber object.
 var isBigNumber = function(value){
     if(_.isUndefined(value) || !_.isObject(value))
         return false;
-    
+
     return (value instanceof BigNumber) ? true : false;
 };
 
@@ -214,7 +214,7 @@ var defineProperties = function(context){
             var count = 0;
 
             // count valid accounts in browser storage
-            _.each(this.get(), function(account, accountIndex){  
+            _.each(this.get(), function(account, accountIndex){
                 if(_.isUndefined(account)
                   || !_.isObject(account)
                   || _.isString(account))
@@ -259,16 +259,16 @@ This will set in browser accounts data at a specified address with the specified
 **/
 
 Accounts.prototype.set = function(address, accountObject){
-    var accounts = LocalStore.get('ethereumAccounts');    
-    
+    var accounts = LocalStore.get('ethereumAccounts');
+
     // if object, store; if null, delete
     if(_.isObject(accountObject))
-        accounts[formatAddress(address)] = accountObject;   
+        accounts[formatAddress(address)] = accountObject;
     else
         delete accounts[formatAddress(address)];
-    
+
     this.log('Setting account object at address: ' + address + ' to account object ' + String(accountObject));
-    
+
     LocalStore.set(this.options.varName, accounts);
 };
 
@@ -304,9 +304,9 @@ Accounts.prototype.new = function(passphrase){
         , locked: false
         , hash: ethUtil.sha3(public.toString('hex') + private.toString('hex')).toString('hex')
     };
-    
+
     // if passphrrase provided or required, attempt account encryption
-    if((!_.isUndefined(passphrase) && !_.isEmpty(passphrase)) 
+    if((!_.isUndefined(passphrase) && !_.isEmpty(passphrase))
         || this.options.requirePassphrase){
         if(this.isPassphrase(passphrase)) {
             private = CryptoJS.AES
@@ -326,18 +326,18 @@ Accounts.prototype.new = function(passphrase){
         private = private.toString('hex')
         public = public.toString('hex')
     }
-    
+
     // Set account object private and public keys
     accountObject.private = private;
     accountObject.public = public;
     this.set(address, accountObject);
-    
+
     this.log('New address created');
-    
+
     // If option select new is true
     if(this.options.selectNew)
         this.select(accountObject.address);
-    
+
     return accountObject;
 };
 
@@ -351,10 +351,10 @@ Select the account that will be used when transactions are made.
 
 Accounts.prototype.select = function(address) {
     var accounts = LocalStore.get(this.options.varName);
-    
+
     if(!this.contains(address))
         return;
-    
+
     accounts['selected'] = address;
     LocalStore.set(this.options.varName, accounts);
 };
@@ -369,25 +369,25 @@ Get an account object that is stored in local browser storage. If encrypted, dec
 **/
 
 Accounts.prototype.get = function(address, passphrase){
-    var accounts = LocalStore.get(this.options.varName);    
-    
+    var accounts = LocalStore.get(this.options.varName);
+
     if(_.isUndefined(address) || _.isEmpty(address))
         return accounts;
-    
+
     if(address == 'selected')
         address = accounts.selected;
-    
-    var accountObject = {};    
+
+    var accountObject = {};
     address = formatAddress(address);
-    
+
     if(!this.contains(address))
         return accountObject;
-    
+
     accountObject = accounts[address];
-    
+
     if(_.isEmpty(accountObject))
         return accountObject;
-    
+
     // If a passphrase is provided, decrypt private and public key
     if(this.isPassphrase(passphrase) && accountObject.encrypted) {
         try {
@@ -397,14 +397,14 @@ Accounts.prototype.get = function(address, passphrase){
             accountObject.public = CryptoJS.AES
                 .decrypt(accountObject.public, passphrase)
                 .toString(CryptoJS.enc.Utf8);
-            
+
             if(ethUtil.sha3(accountObject.public + accountObject.private).toString('hex') == accountObject.hash)
                 accountObject.locked = false;
         }catch(e){
             this.log('Error while decrypting public/private keys: ' + String(e));
         }
     }
-    
+
     return accountObject;
 };
 
@@ -431,18 +431,18 @@ Does the account exist in browser storage, given the specified account address.
 
 Accounts.prototype.contains = function(address){
     var accounts = LocalStore.get(this.options.varName);
-    
+
     if(_.isUndefined(address)
        || _.isEmpty(address))
         return false;
-    
+
     // Add '0x' prefix if not available
     address = formatAddress(address);
-    
+
     // If account with address exists.
     if(_.has(accounts, address))
         return (!_.isUndefined(accounts[address]) && !_.isEmpty(accounts[address]));
-    
+
     return false;
 };
 
@@ -456,7 +456,7 @@ Export the accounts to a JSON ready string.
 
 Accounts.prototype.export = function(){
     this.log('Exported accounts');
-    
+
     return JSON.stringify(this.get());
 };
 
@@ -474,7 +474,7 @@ Accounts.prototype.import = function(JSON_data){
     var parsed = JSON.parse(JSON_data);
     var count = 0;
     var _this = this;
-    
+
     _.each(parsed, function(accountObject, accountIndex){
         if(!_.has(accountObject, 'private')
            || !_.has(accountObject, 'hash')
@@ -482,13 +482,13 @@ Accounts.prototype.import = function(JSON_data){
            || !_.has(accountObject, 'encrypted')
            || !_.has(accountObject, 'locked'))
             return;
-        
+
         count += 1;
         _this.set(accountObject.address, accountObject);
     });
-    
+
     this.log('Imported ' + String(count) + ' accounts');
-    
+
     return count;
 };
 
@@ -528,156 +528,98 @@ Return all accounts as a list array.
 Accounts.prototype.list = function(){
     var accounts = LocalStore.get('ethereumAccounts'),
         return_array = [];
-    
+
     _.each(_.keys(accounts), function(accountKey, accountIndex){
        if(accountKey != "selected")
            return_array.push(accounts[accountKey]);
     });
-        
+
     return return_array;
 };
 
 
 /**
-This method will override web3.eth.sendTransaction, and assemble transactions given the data provided, only for transactions sent from an account stored in browser. If sendTransaction is used with a normal account not stored in browser, sendTransaction will not be overridden.
+Alias for contains(), but asynchronous.
 
-@method (extendWeb3)
+This method is required to be a part of the transaction_signer specification for
+the HookedWeb3Provider.
+
+@method (hasAddress)
 **/
 
-Accounts.prototype.extendWeb3 = function(){
-    // If web3 is not init. yet
-    if(typeof web3 === "undefined") {
-        this.log('WARNING: The web3 object does not exist or has not been initiated yet. Please include and initiate the web3 object');
-        return;
-    }
-    
-    // If web3 does not have sendRawTransaction
-    if(!_.has(web3.eth, 'sendRawTransaction')) {
-        this.log('WARNING: The web3 object does not contain the sendRawTransaction method which is required to extend web3.eth.sendTransaction. Please use an edition of web3 that contains the method "web3.eth.sendRawTransaction".');        
-        return;
-    }
-    
-    // Store old instance of sendTransaction and sendRawTransaction
-    var transactMethod = web3.eth.sendTransaction;
-    var rawTransactionMethod = web3.eth.sendRawTransaction;
-    
+Accounts.prototype.hasAddress = function(address, callback) {
+  callback(null, this.contains(address));
+}
+
+
+/**
+This will sign a transaction based on transaction parameters passed to it.
+If the from address is not registered as an in-browser account, signTransaction
+will respond with an error.
+
+This method is required to be a part of the transaction_signer specification for
+the HookedWeb3Provider.
+
+tx_params should be an object passed directly from web3. All data should be hex
+and start with the prefix "0x". nonce is required.
+
+@method (signTransaction)
+**/
+Accounts.prototype.signTransaction = function(tx_params, callback) {
     // Accounts instance
     var accounts = this;
-    
-    // Get default gas price
-    if(this.options.defaultGasPrice == 'useWeb3') {
-        web3.eth.getGasPrice(function(err, result){            
-            if(!err)
-                accounts.gasPrice = result;
-        });
+
+    // if from is an account is not stored in browser, error because we can't
+    // sign the transaction.
+    if(!accounts.contains(tx_params.from)) {
+        callback(new Error("Cannot sign transaction; from address not found in accounts list."));
     }
-    
-    // Override web3.eth.sendTransaction
-    web3.eth.sendTransaction = function(){
-        var args = Array.prototype.slice.call(arguments);
-        var optionsObject = {};
-        var callback = null;
-        var positions = {};
-        
-        // Go through sendTransaction args (param1, param2, options, etc..)
-        _.each(args, function(arg, argIndex){
-            // the arg is an object, thats not a BN, so it's the options
-            if(_.isObject(arg) 
-               && !isBigNumber(arg) 
-               && !_.isFunction(arg) 
-               && _.has(arg, 'from')) {
-                optionsObject = arg;
-                positions['options'] = argIndex;
-            }
-            
-            // the arg is a function, so it must be the callback
-            if(_.isFunction(arg)) {
-                callback = arg;
-                positions.callback = argIndex;
-            }
-        });
+    // Get the account of address set in sendTransaction options, from the accounts stored in browser
+    var account = accounts.get(tx_params.from);
 
-        if (callback == null) {
-            throw new Error("You must provide a callback to web3.eth.sendTransaction() when using ethereumjs-accounts")
-        }
-        
-        // if from is an account stored in browser, build raw TX and send
-        if(accounts.contains(optionsObject.from)) {   
-            // Get the account of address set in sendTransaction options, from the accounts stored in browser
-            var account = accounts.get(optionsObject.from);
-            
-            // if the account is encrypted, try to decrypt it
-            if(account.encrypted) {
-                account = accounts.get(optionsObject.from
-                                       ,accounts.options.request(account));
-            }
-            
-            // if account is still locked, quit
-            if(account.locked) {
-                accounts.log('Account locked!');
-                return;
-            }
-            
-            web3.eth.getTransactionCount(account.address, function(err, getNonce) {
-                if (err != null) {
-                    callback(err);
-                    return;
-                }
+    // if the account is encrypted, try to decrypt it
+    if(account.encrypted) {
+        account = accounts.get(tx_params.from, accounts.options.request(account));
+    }
 
-                web3.eth.getGasPrice(function(err, gasPrice) {
-                    if (err != null) {
-                        callback(err);
-                        return;
-                    }
+    // if account is still locked, quit
+    if(account.locked) {
+        callback(new Error("Cannot sign transaction. Account locked!"));
+        return;
+    }
 
-                    // Assemble the default raw transaction data
-                    var rawTx = {
-                        nonce: formatHex(getNonce),
-                        gasPrice: formatHex(gasPrice.toString(16)),
-                        gasLimit: formatHex(new BigNumber('1900000').toString(16)),
-                        value: '00',
-                        data: '00'
-                    };
-
-                    // Set whatever properties are available from the sendTransaction options object
-                    if(_.has(optionsObject, 'gasPrice'))
-                        rawTx.gasPrice = formatHex(formatNumber(optionsObject.gasPrice));
-                    
-                    if(_.has(optionsObject, 'gasLimit'))
-                        rawTx.gasLimit = formatHex(formatNumber(optionsObject.gasLimit));
-                    
-                    if(_.has(optionsObject, 'gas'))
-                        rawTx.gasLimit = formatHex(formatNumber(optionsObject.gas));
-                    
-                    if(_.has(optionsObject, 'to'))
-                        rawTx.to = ethUtil.stripHexPrefix(optionsObject.to);
-                    
-                    if(_.has(optionsObject, 'value'))
-                        rawTx.value = formatNumber(optionsObject.value);
-                    
-                    if(_.has(optionsObject, 'data'))
-                        rawTx.data = ethUtil.stripHexPrefix(formatHex(optionsObject.data));
-                    
-                    if(_.has(optionsObject, 'code'))
-                        rawTx.data = ethUtil.stripHexPrefix(formatHex(optionsObject.code));
-                    
-                    // convert string private key to a Buffer Object
-                    var privateKey = new Buffer(account.private, 'hex');
-                    
-                    // init new transaction object, and sign the transaction
-                    var tx = new Tx(rawTx);
-                    tx.sign(privateKey);
-                    
-                    // Build a serialized hex version of the Tx
-                    var serializedTx = '0x' + tx.serialize().toString('hex');
-                    
-                    // call the web3.eth.sendRawTransaction with 
-                    rawTransactionMethod(serializedTx, callback);   
-                });
-            });
-        }else{
-            // If the transaction is not using an account stored in browser, send as usual with web3.eth.sendTransaction
-            transactMethod.apply(this, args);
-        }
+    var rawTx = {
+        nonce: formatHex(ethUtil.stripHexPrefix(tx_params.nonce)),
+        gasPrice: formatHex(ethUtil.stripHexPrefix(tx_params.gasPrice)),
+        gasLimit: formatHex(new BigNumber('3141592').toString(16)),
+        value: '00',
+        data: ''
     };
+
+    if(tx_params.gasPrice != null)
+        rawTx.gasPrice = formatHex(ethUtil.stripHexPrefix(tx_params.gasPrice));
+
+    if(tx_params.gas != null)
+        rawTx.gasLimit = formatHex(ethUtil.stripHexPrefix(tx_params.gas));
+
+    if(tx_params.to != null)
+        rawTx.to = formatHex(ethUtil.stripHexPrefix(tx_params.to));
+
+    if(tx_params.value != null)
+        rawTx.value = formatHex(ethUtil.stripHexPrefix(tx_params.value));
+
+    if(tx_params.data != null)
+        rawTx.data = formatHex(ethUtil.stripHexPrefix(tx_params.data));
+
+    // convert string private key to a Buffer Object
+    var privateKey = new Buffer(account.private, 'hex');
+
+    // init new transaction object, and sign the transaction
+    var tx = new Tx(rawTx);
+    tx.sign(privateKey);
+
+    // Build a serialized hex version of the Tx
+    var serializedTx = '0x' + tx.serialize().toString('hex');
+
+    callback(null, serializedTx);
 };
