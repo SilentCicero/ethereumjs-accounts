@@ -4,9 +4,11 @@ A simple module for creating, managing and using Ethereum accounts in browser.
 
 ## About
 
-This module allows the secure generation and management of Ethereum accounts in browser and the functionality to optionally override the web3(.js) object (i.e. the 'sendTransaction' method) so that, when browser stored accounts are being used by dApps, their outgoing transactions can be securly signed by the accounts stored in browser. All account data is stored in the browsers localStore and can be optionally encrypted with a passphrase using AES. If you're using Meteor.js, the Accounts object will be a reactive variable. 
+This module allows the secure generation and management of Ethereum accounts in browser so that when browser stored accounts are being used by dApps, their outgoing transactions can be securly signed by the accounts stored in browser. All account data is stored in the browsers localStore and can be optionally encrypted with a passphrase using AES. If you're using Meteor.js, the Accounts object will be a reactive variable. 
 
-Please note that this module is still in Alpha and the 'extendWeb3' method is still being developed and vetted. The security status of this module is still unknown and must still be vetted by trusted third-parties before production use.
+This module has been specifically designed as a transaction signer meant for use with the [HookedWeb3Provider](https://github.com/ConsenSys/hooked-web3-provider). See example below.
+
+Please note that this module is still in Alpha. The security status of this module is still unknown and must still be vetted by trusted third-parties before production use.
 
 ## Installation
 
@@ -59,10 +61,14 @@ var accountObject = accounts.get('0x169aab499b549eac087035e640d3f7d882ef5e2d', '
 */
 
 // Return all accounts stored in browser
-var accounts = accounts.get();
+var account_list = accounts.get();
 
-// Extend the web3.js object
-accounts.extendWeb3();
+// Integrate with web3. See: https://github.com/ConsenSys/hooked-web3-provider
+var provider = new HookedWeb3Provider({
+  host: "http://localhost:8545",
+  transaction_signer: accounts
+});
+web3.setProvider(provider);
 
 ```
 
@@ -84,7 +90,8 @@ accounts.extendWeb3();
         - [`Accounts.import()`](#method-import) 
         - [`Accounts.export()`](#method-export) 
         - [`Accounts.backup()`](#method-backup) 
-        - [`Accounts.extendWeb3()`](#method-extendWeb3) 
+        - [`Accounts.hasAddress(address, callback)`](#hasAddress)
+        - [`Accounts.signTransaction(tx_params, callback)`](#signTransaction)
         
 ## Browserify
 
