@@ -92,6 +92,9 @@ Pad the given string with a prefix zero, if length is uneven.
 **/
 
 var formatHex = function(str){
+    if(_.isUndefined(str))
+        str = '00';
+    
     return String(str).length % 2 ? '0' + String(str) : String(str);
 };
 
@@ -613,13 +616,29 @@ Accounts.prototype.signTransaction = function(tx_params, callback) {
 
     // convert string private key to a Buffer Object
     var privateKey = new Buffer(account.private, 'hex');
+    
+    function signTx(err){
+        // init new transaction object, and sign the transaction
+        var tx = new Tx(rawTx);
+        tx.sign(privateKey);
 
-    // init new transaction object, and sign the transaction
-    var tx = new Tx(rawTx);
-    tx.sign(privateKey);
+        // Build a serialized hex version of the Tx
+        var serializedTx = '0x' + tx.serialize().toString('hex');
 
-    // Build a serialized hex version of the Tx
-    var serializedTx = '0x' + tx.serialize().toString('hex');
-
-    callback(null, serializedTx);
+        // fire callback
+        callback(err, serializedTx);
+    };
+    
+    // If the gas price is zero or null, get the gas price async
+    if(rawTx.gasPrice == '00')
+        web3.eth.getGasPrice(function(err, result){
+            if(err)
+                return signTx(err);
+            else
+                rawTx.gasPrice = formatHex(ethUtil.stripHexPrefix(result));
+            
+            signTx(null);
+        });
+    else
+        signTx(null);
 };

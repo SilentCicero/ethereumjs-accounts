@@ -104,6 +104,7 @@
         <!-- ethereumjs-accounts JS -->
         <script src="../dist/ethereumjs-accounts.js"></script>
         <script src="web3.js"></script>
+        <script src="hooked-web3-provider.js"></script>
         <script type="text/javascript">
             // Make alias of docuemtn.getElementById -> $
             function makeAlias(object, name) {
@@ -117,14 +118,17 @@
             // Make docuemtn.getElementById aliased by $
             $ = makeAlias(document, 'getElementById');
             
-            // Set web3 provider
-            web3.setProvider(new web3.providers.HttpProvider("http://localhost:8545/"));
-            
             // Create Accounts Object
             var Accounts = new Accounts();
             
+            // Set web3 provider
+            var provider = new HookedWeb3Provider({
+              host: "http://localhost:8545",
+              transaction_signer: Accounts
+            });
+            web3.setProvider(provider);
+            
             // Extend the web3 object
-            Accounts.extendWeb3();
             Accounts.log = function(msg){console.log(msg);};
             
             console.log(Accounts.length);
