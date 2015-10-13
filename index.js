@@ -380,8 +380,10 @@ Accounts.prototype.get = function(address, passphrase){
     if(address == 'selected')
         address = accounts.selected;
 
-    var accountObject = {};
     address = formatAddress(address);
+    var accountObject = {
+        address: address
+    };
 
     if(!this.contains(address))
         return accountObject;
