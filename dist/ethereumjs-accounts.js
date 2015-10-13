@@ -357,8 +357,8 @@ Select the account that will be used when transactions are made.
 Accounts.prototype.select = function(address) {
     var accounts = LocalStore.get(this.options.varName);
 
-    if(!this.contains(address))
-        return;
+    //if(!this.contains(address))
+    //    return;
 
     accounts['selected'] = address;
     LocalStore.set(this.options.varName, accounts);
