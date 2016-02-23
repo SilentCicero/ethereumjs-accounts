@@ -2,6 +2,8 @@
 
 A simple module for creating, managing and using Ethereum accounts in browser.
 
+Note, this module has not been upgraded. While it will still work with Ethereum dApps, I would recommend using this package instead: https://github.com/ConsenSys/eth-lightwallet.
+
 ## About
 
 This module allows the secure generation and management of Ethereum accounts in browser so that when browser stored accounts are being used by dApps, their outgoing transactions can be securly signed by the accounts stored in browser. All account data is stored in the browsers localStore and can be optionally encrypted with a passphrase using AES. If you're using Meteor.js, the Accounts object will be a reactive variable. 
